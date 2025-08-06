@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cricket Live Score</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #1e3c72, #2a5298);
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+    }
+    .container {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 30px;
+      border-radius: 10px;
+      display: inline-block;
+      max-width: 550px;
+    }
+    select, button {
+      margin: 5px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: none;
+    }
+    button {
+      background-color: #28a745;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    #score {
+      font-size: 24px;
+      margin: 20px 0;
+    }
+    #lastRecord {
+      margin-top: 30px;
+      font-size: 18px;
+      color: #fffacd;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏏 Live Cricket Scoreboard</h1>
+
+    <div>
+      <label for="teamSelect">Select Team:</label>
+      <select id="teamSelect" onchange="changeTeam()">
+        <option value="India">🇮🇳 India</option>
+        <option value="Australia">🇦🇺 Australia</option>
+        <option value="England">🏴 England</option>
+        <option value="Pakistan">🇵🇰 Pakistan</option>
+      </select>
+
+      <label for="formatSelect">Format:</label>
+      <select id="formatSelect" onchange="changeFormat()">
+        <option value="T10">T10</option>
+        <option value="T20">T20</option>
+        <option value="ODI">ODI</option>
+        <option value="Test">Test</option>
+        <option value="8Over">8 Over Club Match</option>
+        <option value="5Over">5 Over Club Match</option>
+      </select>
+    </div>
+
+    <h2 id="team">🇮🇳 India</h2>
+    <p id="format">Format: T10</p>
+    <p id="score">Score: 0 / 0<br>Overs: 0.0</p>
+
+    <div>
+      <button onclick="addRun(1)">+1 Run</button>
+      <button onclick="addRun(2)">+2 Runs</button>
+      <button onclick="addRun(4)">+4 Runs</button>
+      <button onclick="addRun(6)">+6 Runs</button>
+      <button onclick="addWide()">+1 Wide</button>
+      <button onclick="addNoBall()">+1 No Ball</button>
+      <button onclick="addDotBall()">Dot Ball</button>
+      <button onclick="addWicket()">Wicket</button>
+      <button onclick="resetMatch()">Reset</button>
+    </div>
+
+    <div id="lastRecord"></div>
+  </div>
+
+  <script>
+    let runs = 0;
+    let wickets = 0;
+    let balls = 0;
+    let maxOvers = 10;
+    let currentTeam = "India";
+    let currentFormat = "T10";
+
+    const flagMap = {
+      "India": "🇮🇳",
+      "Australia": "🇦🇺",
+      "England": "🏴",
+      "Pakistan": "🇵🇰"
+    };
+
+    function updateScore() {
+      const overs = Math.floor(balls / 6) + '.' + (balls % 6);
+      document.getElementById("score").innerHTML = `Score: ${runs} / ${wickets}<br>Overs: ${overs}`;
+    }
+
+    function addRun(run) {
+      if (wickets < 10 && !isInningsOver()) {
+        runs += run;
+        balls++;
+        checkEnd();
+        updateScore();
+      }
+    }
+
+    function addDotBall() {
+      if (wickets < 10 && !isInningsOver()) {
+        balls++;
+        checkEnd();
+        updateScore();
+      }
+    }
+
+    function addWicket() {
+      if (wickets < 10 && !isInningsOver()) {
+        wickets++;
+        balls++;
+        checkEnd();
+        updateScore();
+      } else {
+        alert("All out!");
+      }
+    }
+
+    function addWide() {
+      if (!isInningsOver()) {
+        runs += 1;
+        updateScore();
+      }
+    }
+
+    function addNoBall() {
+      if (!isInningsOver()) {
+        runs += 1;
+        updateScore();
+      }
+    }
+
+    function isInningsOver() {
+      return (Math.floor(balls / 6) >= maxOvers || wickets >= 10);
+    }
+
+    function checkEnd() {
+      if (isInningsOver()) {
+        alert("🏁 Innings Over!");
+        saveMatch();
+      }
+    }
+
+    function resetMatch() {
+      runs = 0;
+      wickets = 0;
+      balls = 0;
+      updateScore();
+    }
+
+    function changeTeam() {
+      currentTeam = document.getElementById("teamSelect").value;
+      document.getElementById("team").innerText = `${flagMap[currentTeam]} ${currentTeam}`;
+    }
+
+    function changeFormat() {
+      currentFormat = document.getElementById("formatSelect").value;
+      document.getElementById("format").innerText = "Format: " + currentFormat;
+
+      switch (currentFormat) {
+        case "T10": maxOvers = 10; break;
+        case "T20": maxOvers = 20; break;
+        case "ODI": maxOvers = 50; break;
+        case "Test": maxOvers = 90; break;
+        case "8Over": maxOvers = 8; break;
+        case "5Over": maxOvers = 5; break;
+        default: maxOvers = 10;
+      }
+
+      resetMatch();
+    }
+
+    function saveMatch() {
+      const overs = Math.floor(balls / 6) + '.' + (balls % 6);
+      const record = {
+        team: currentTeam,
+        format: currentFormat,
+        runs,
+        wickets,
+        overs
+      };
+      localStorage.setItem("lastMatch", JSON.stringify(record));
+      displayLastRecord();
+    }
+
+    function displayLastRecord() {
+      const data = JSON.parse(localStorage.getItem("lastMatch"));
+      if (data) {
+        document.getElementById("lastRecord").innerHTML =
+          `🗂 Last Match Record:<br>
+          Team: ${flagMap[data.team]} ${data.team} <br>
+          Format: ${data.format} <br>
+          Score: ${data.runs} / ${data.wickets} <br>
+          Overs: ${data.overs}`;
+      }
+    }
+
+    // Initial render
+    updateScore();
+    displayLastRecord();
+  </script>
+</body>
+</html>
